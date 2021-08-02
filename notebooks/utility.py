@@ -33,6 +33,7 @@ def get_data(verbose=True, stock_ids=None):
     # if not stock_ids:
     #    stock_ids = range(10) # [0..126] files in the total set
     if True:
+        # memory efficient but needs to load everything!
         stock_filenames = []
         #for stock_id in tqdm(stock_ids):
         #    assert isinstance(stock_id, int)

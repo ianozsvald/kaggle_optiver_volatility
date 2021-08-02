@@ -3,13 +3,54 @@
 
 ## First attempt
 
+### 2021-07-30
+
+Building on previous to simplify the data load into one of two choices with `20210728_light`.
+
+Note that taking Alair plots out of a notebook doesn't seem to change the resident memory usage. The file on disk with Altair is however 10x the size of the no-altair nb!
+
+### 2021-07-28
+
+Adding some more features to RF (means and more variance)
+
+```
+est is RFReg with 10 est and defaults (note doing same with 30 est gets r^2 of 0.67)
+112 unique stock ids, test set is 25.0%
+Features: ['bid_price1_var', 'ask_price1_var', 'bid_price2_var', 'ask_price2_var', 'bid_size1_var', 'ask_size1_var', 'bid_price1_mean', 'ask_price1_mean', 'bid_price2_mean', 'ask_price2_mean', 'bid_size1_mean', 'ask_size1_mean', 'stock_id']
+r^2 score 0.657
+```
+
+Submitted the above to Kaggle with 30 estimators. Now I rank 1309/1409 with a score of 0.45306. 
+
+My prediction error plot suggests I'm under-fitting on the larger values.
+
+Attempting a first crack at using WAP (too basic) gives:
+
+```
+30 unique stock ids, test set is 25.0%
+Features: ['wap_var', 'wap_mean', 'stock_id']
+r^2 score 0.510 on 5,748 predictions
+```
+
+
 ### 2021-07-23
 
 Going forwards:
  * need to include the WAP calculation as a baseline (for autocorrelation on bids/asks), plus my 2 features
- * can add more features on simple RF
- * want to add yellowbrick for prediction display
+ * ~~can add more features on simple RF~~
+ * ~~want to add yellowbrick for prediction display~~
  * want to add 3fold cross val
+ * could try some light hyperparam sweeps e.g. nbr estimators or max depth, could try xgboost or lightgbm
+ * ~~shouldn't use 75% for training when submitting on kaggle~~
+ * nice speedup to try? https://www.kaggle.com/c/optiver-realized-volatility-prediction/discussion/255473
+ 
+Submitted model
+```
+112 unique stock ids, test set is 25.0%
+Features: ['bid_price1_var', 'ask_price1_var', 'stock_id']
+r^2 score 0.416
+Kaggle - rank 1320/1338 score 1.2 (worse than the benchmark!)
+```
 
 Built a new stratified train/test split on time_id. Load an arbitrary number of stocks. Build an estimator e.g. linear regression or random forest regressor.
 
@@ -60,10 +101,26 @@ TODO
 * trying dd.from_dataframe fails on memory
 * pd.read_parquet with paths, 13GB overall in 6s.
 
+I made a book_test_local.parquet folder with 6 files to use for local testing of the prediction process
+
+```
+    stock_ids_for_small_test_set = range(120, 127)
+    dfx = df_train_all.query('stock_id in @stock_ids_for_small_test_set')
+    ser_row_id = dfx.reset_index()[['stock_id', 'time_id']].apply(lambda x: f"{x[0]}-{x[1]}", axis=1)
+    dfx2 = dfx.reset_index()
+    dfx2['row_id'] = ser_row_id
+    dfx2.to_csv('test_local.csv', index=False)
+```
+
 #### tutorial notebook
 
 * https://www.kaggle.com/jiashenliu/introduction-to-financial-concepts-and-data?scriptVersionId=67183666#Competition-data
 * WAP is important
+
+#### feature ideas
+
+* https://www.kaggle.com/c/optiver-realized-volatility-prediction/discussion/250357 ask1+ask2 bid1+bid2 combined information
+* stock 31 https://www.kaggle.com/c/optiver-realized-volatility-prediction/discussion/250503 has low liquidity
 
 ### 2021-07-19
 
