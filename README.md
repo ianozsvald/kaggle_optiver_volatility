@@ -3,6 +3,81 @@
 
 ## First attempt
 
+### 2021-08-02
+
+Working on `20210802_light` which can run on Kaggle and locally, it can use 0% or e.g. 25% of data as a test set.
+
+```
+RFReg 10 est (20s)
+USE_ALL_STOCK_IDS: True
+112 unique stock ids, test set is 25.0%
+Features: ['bid_price1_var', 'ask_price1_var', 'bid_price2_var', 'ask_price2_var', 'bid_size1_var', 'ask_size1_var', 'bid_price1_mean', 'ask_price1_mean', 'bid_price2_mean', 'ask_price2_mean', 'bid_size1_mean', 'ask_size1_mean', 'log_return', 'stock_id']
+r^2 score 0.770 on 107,293 predictions
+# note log_return is significantly the most predictive feature, then bid_size1_var/mean and ask_size1_mean/var as much less important, then stock_id
+
+RFReg 50 est
+USE_ALL_STOCK_IDS: True
+112 unique stock ids, test set is 25.0%
+Features: ['bid_price1_var', 'ask_price1_var', 'bid_price2_var', 'ask_price2_var', 'bid_size1_var', 'ask_size1_var', 'bid_price1_mean', 'ask_price1_mean', 'bid_price2_mean', 'ask_price2_mean', 'bid_size1_mean', 'ask_size1_mean', 'log_return', 'stock_id']
+r^2 score 0.788 on 107,293 predictions
+
+REReg 100 est (2.5mins)
+USE_ALL_STOCK_IDS: True
+112 unique stock ids, test set is 25.0%
+Features: ['bid_price1_var', 'ask_price1_var', 'bid_price2_var', 'ask_price2_var', 'bid_size1_var', 'ask_size1_var', 'bid_price1_mean', 'ask_price1_mean', 'bid_price2_mean', 'ask_price2_mean', 'bid_size1_mean', 'ask_size1_mean', 'log_return', 'stock_id']
+RandomForestRegressor(n_jobs=-1)
+r^2 score 0.791 on 107,293 predictions
+
+GBReg 100 est (3.5 mins, single core)
+USE_ALL_STOCK_IDS: True
+112 unique stock ids, test set is 25.0%
+Features: ['bid_price1_var', 'ask_price1_var', 'bid_price2_var', 'ask_price2_var', 'bid_size1_var', 'ask_size1_var', 'bid_price1_mean', 'ask_price1_mean', 'bid_price2_mean', 'ask_price2_mean', 'bid_size1_mean', 'ask_size1_mean', 'log_return', 'stock_id']
+GradientBoostingRegressor()
+r^2 score 0.795 on 107,293 predictions
+and log_return is almost everything!
+
+Kaggle submission scores 0.3134 (up from 0.45306), rank 1220/1559 (78th percentile) via https://www.kaggle.com/ianozsvald/20210802-light/
+
+Adding size and also wap 3 items for mean/std
+USE_ALL_STOCK_IDS: True
+112 unique stock ids, test set is 25.0%
+Features: ['bid_price1_var', 'ask_price1_var', 'bid_price2_var', 'ask_price2_var', 'bid_size1_var', 'ask_size1_var', 'bid_size2_var', 'ask_size2_var', 'wap_var', 'wap_numerator_var', 'wap_denominator_var', 'bid_price1_mean', 'ask_price1_mean', 'bid_price2_mean', 'ask_price2_mean', 'bid_size1_mean', 'ask_size1_mean', 'bid_size2_mean', 'ask_size2_mean', 'wap_mean', 'wap_numerator_mean', 'wap_denominator_mean', 'size', 'log_return', 'stock_id']
+GradientBoostingRegressor()
+r^2 score 0.799 on 107,289 predictions (note this will be a different train/test split than before)
+BUT adding these hurt the public score (0.315!)
+```
+
+Each of the above still underpredict, with occasional large outliers.
+
+Observation - of the basic column statistics the mean/var of order size is consistently more important than the mean/var of price - do we even need price? However removing the 4 prices seems to hurt predictive ability on 2 random runs (4 runs total - 2 with and 2 without), so I'm keeping them.
+
+Note that a re-run of the notebook is entirely deterministic now. Using numpy's `default_rng` solved that.
+
+Using RFReg and a linear weighted realized volatility in addition to regular volatility I get
+```
+USE_ALL_STOCK_IDS: True
+112 unique stock ids, test set is 25.0%
+Features: ['bid_price1_var', 'ask_price1_var', 'bid_price2_var', 'ask_price2_var', 'bid_size1_var', 'ask_size1_var', 'bid_size2_var', 'ask_size2_var', 'bid_price1_mean', 'ask_price1_mean', 'bid_price2_mean', 'ask_price2_mean', 'bid_size1_mean', 'ask_size1_mean', 'bid_size2_mean', 'ask_size2_mean', 'size', 'log_return1', 'log_return2', 'log_return1_linear_weight', 'stock_id']
+RandomForestRegressor(n_jobs=-1, random_state=2)
+r^2 score 0.811 on 107,286 predictions
+top features
+log_return1_linear_weight, log_return1, log_return2, size and then stats on bid/ask sizes
+Kaggle 0.29276 rank 1179/1643 (71st percentile)
+```
+
+TODO
+
+* Find biggest/smallest targets, check time series for these
+* ~~Count nbr of time segments (circa 3.8k)~~~, check how often we have all 600 seconds
+* Make notes on how I might sample future from log return distributions
+* Dig into the outliers - find the worst cases and view their timeseries
+* want to add 3fold cross val
+* Use https://github.com/mwouts/itables on single-stock investigator notebook
+* ~~try var of wap, wap_denom etc~~ (possibly these didn't help, not clear)
+* try time-weighted wap so most of impact is in 500-599 seconds
+* https://pypi.org/project/sklearn-gbmi/ consider for interactions on GBReg
+* could try some light hyperparam sweeps e.g. nbr estimators or max depth, could try xgboost or lightgbm
+
 ### 2021-07-30
 
 Building on previous to simplify the data load into one of two choices with `20210728_light`.
@@ -36,13 +111,11 @@ r^2 score 0.510 on 5,748 predictions
 ### 2021-07-23
 
 Going forwards:
- * need to include the WAP calculation as a baseline (for autocorrelation on bids/asks), plus my 2 features
+ * ~~need to include the WAP calculation as a baseline (for autocorrelation on bids/asks), plus my 2 features~~
  * ~~can add more features on simple RF~~
  * ~~want to add yellowbrick for prediction display~~
- * want to add 3fold cross val
- * could try some light hyperparam sweeps e.g. nbr estimators or max depth, could try xgboost or lightgbm
  * ~~shouldn't use 75% for training when submitting on kaggle~~
- * nice speedup to try? https://www.kaggle.com/c/optiver-realized-volatility-prediction/discussion/255473
+ * ~~nice speedup to try? https://www.kaggle.com/c/optiver-realized-volatility-prediction/discussion/255473~~
  
 Submitted model
 ```
@@ -173,4 +246,6 @@ In `20210715 first eda` if I take `bid_train` for stock id 0 or 1, take the vari
 ```
 conda create -n optiver_volatility python=3.8 pandas jupyterlab scikit-learn pandas-profiling matplotlib altair ipython_memory_usage
 conda install pytest numexpr bottleneck
+pip install itables # https://github.com/mwouts/itables
+conda install flake8 pandas-vet
 ```

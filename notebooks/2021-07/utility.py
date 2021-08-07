@@ -19,11 +19,13 @@ def get_training_stock_ids(parquet_folder="book_train.parquet"):
 
 
 def get_data(verbose=True, stock_ids=None):
-    """stock_ids can be None (uses 0..9 by default) or 'all' for all stocks or a specified list of numeric ids"""
+    """stock_ids can be None (uses 0..9 by default) or 'all' for all 
+    stocks or a specified list of numeric ids"""
     items_in_folder = os.listdir(os.path.join(ROOT, "book_train.parquet"))
     if verbose:
         print(
-            f"There are {len(items_in_folder)} items in the folder and they look like {items_in_folder[:5]}"
+            f"""There are {len(items_in_folder)} items in the folder"""
+            """and they look like {items_in_folder[:5]}"""
         )
 
     # if stock_ids == 'all':
@@ -38,7 +40,7 @@ def get_data(verbose=True, stock_ids=None):
         #for stock_id in tqdm(stock_ids):
         #    assert isinstance(stock_id, int)
         #    stock_filenames.append(os.path.join(ROOT, f"book_train.parquet/stock_id={stock_id}"))
-        df_book_train = pd.read_parquet(os.path.join(ROOT, f"book_train.parquet"))
+        df_book_train = pd.read_parquet(os.path.join(ROOT, "book_train.parquet"))
 
     if False:
         df_book_trains = []
@@ -72,7 +74,8 @@ def get_data(verbose=True, stock_ids=None):
         if 'client' not in dir():
             # useful for Pandas - no threads (Pandas not GIL-friendly), many processes
             # and enough memory to not max out my laptop
-            client = Client(processes=True, n_workers=2, threads_per_worker=1, memory_limit='10GB')
+            client = Client(processes=True, n_workers=2, 
+                            threads_per_worker=1, memory_limit='10GB')
         print(client) # show client details                
 
         import dask.dataframe as dd
@@ -91,7 +94,7 @@ def get_data(verbose=True, stock_ids=None):
     if training_rows_was != training_rows_is:
         print(f"**** Had {training_rows_was:,} rows, now we have {training_rows_is:,}")
     else:
-        print(f"Kept all training rows during get_data")
+        print("Kept all training rows during get_data")
 
     return df_train_all, df_book_train
 
