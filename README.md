@@ -3,6 +3,88 @@
 
 ## First attempt
 
+### 2021-08-19
+
+Working on `20210819_light` notebook, locally. 
+
+* ~~Generalise wap and make_realized_volatility fns~~
+* ~~Add linear and uniform wap2~~
+* Profile the wap calculations - what's slow?
+* Figure out what drives the wap calculation
+* GroupKFold on small groups, check it is reproducible
+* Try "from itables import init_notebook_mode" again?
+
+During an investigation did try to change the weights to include
+* uniform (all 1s)
+* linear (0.1 to 1.0)
+* geometric (exponential increase)
+* half0half1 (0s...1s...)
+
+_insight_ The outcome appeared to be that uniform and linear were useful, half0half1 reasonably useful, geometric somewhat harmful
+
+_insight_ adding Numba to the weighted calc fn is faster, but we have to clean up the implementation and remove strings
+
+```
+20210819_light
+Outcome:
+* xgboost 30s and lgbm 2s for similar scores
+
+Note that the data load for all parquet takes 400s on laptop (8 workers)
+
+Top features:
+0.7113 	log_return1_linear
+0.1603 	log_return1_uniform
+0.0770 	log_return2_linear
+0.0142 	log_return2_uniform
+0.0057 	size
+0.0047 	stock_id
+0.0036 	log_return2_half0half1
+0.0031 	log_return1_half0half1 
+
+xgboost
+In [67] used 0.0000 MiB RAM in 35.65s, peaked 0.00 MiB above current, total RAM usage 963.21 MiB
+r^2 score 0.818 on 107,286 predictions
+
+lgbm
+In [56] used 53.2539 MiB RAM in 1.48s, peaked 107.98 MiB above current, total RAM usage 757.58 MiB
+r^2 score 0.819 on 107,286 predictions
+
+gbmreg
+In [69] used -0.0273 MiB RAM in 299.54s, peaked 0.03 MiB above current, total RAM usage 963.34 MiB
+r^2 score 0.813 on 107,286 predictions
+
+rfreg
+In [71] used 2568.6680 MiB RAM in 223.72s, peaked 0.00 MiB above current, total RAM usage 3532.01 MiB
+r^2 score 0.814 on 107,286 predictions
+
+HistGradientBoostingRegressor
+In [90] used 21.0547 MiB RAM in 2.41s, peaked 118.21 MiB above current, total RAM usage 3577.47 MiB
+r^2 score 0.809 on 107,286 predictions # worst score?
+```
+
+```
+20210819_light_kaggle
+lightgbm, all features
+```
+
+### diagnostics first crack
+
+`20210802_light_diagnostics` used
+
+```
+import shap
+explainer = shap.Explainer(est)
+shap_values = explainer(X_test[:5])
+
+# visualize the first prediction's explanation
+from shap.plots import _waterfall
+# https://github.com/slundberg/shap/issues/2140
+_waterfall.waterfall_legacy(explainer.expected_value[0], shap_values[0].values, X_test.iloc[0] )
+
+shap.plots.beeswarm(shap_values)
+
+shap.plots.bar(shap_values) # feature importances equivalent plot
+
 ### 2021-08-02
 
 Working on `20210802_light` which can run on Kaggle and locally, it can use 0% or e.g. 25% of data as a test set.
@@ -63,6 +145,16 @@ r^2 score 0.811 on 107,286 predictions
 top features
 log_return1_linear_weight, log_return1, log_return2, size and then stats on bid/ask sizes
 Kaggle 0.29276 rank 1179/1643 (71st percentile)
+
+Top features were:
+0.716272 	log_return1_linear_weight
+0.116127 	log_return1
+0.028613 	log_return2
+0.018641 	size
+0.011928 	bid_size1_var
+0.010146 	bid_size2_var
+
+The above locally on all data takes circa 200s to train with RFReg
 ```
 
 TODO
@@ -247,5 +339,5 @@ In `20210715 first eda` if I take `bid_train` for stock id 0 or 1, take the vari
 conda create -n optiver_volatility python=3.8 pandas jupyterlab scikit-learn pandas-profiling matplotlib altair ipython_memory_usage
 conda install pytest numexpr bottleneck
 pip install itables # https://github.com/mwouts/itables
-conda install flake8 pandas-vet
+conda install flake8 pandas-vet shap xgboost lightgbm eli5
 ```
