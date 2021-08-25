@@ -3,6 +3,12 @@
 
 ## First attempt
 
+### 2021-08-25
+
+Working on `20210825_light` notebook, locally.
+
+* Starting to integrate some trade data
+
 ### 2021-08-19
 
 Working on `20210819_light` notebook, locally. 
@@ -11,7 +17,7 @@ Working on `20210819_light` notebook, locally.
 * ~~Add linear and uniform wap2~~
 * Profile the wap calculations - what's slow?
 * Figure out what drives the wap calculation
-* GroupKFold on small groups, check it is reproducible
+* ~~GroupKFold on small groups, check it is reproducible~~
 * Try "from itables import init_notebook_mode" again?
 
 During an investigation did try to change the weights to include
@@ -45,6 +51,10 @@ xgboost
 In [67] used 0.0000 MiB RAM in 35.65s, peaked 0.00 MiB above current, total RAM usage 963.21 MiB
 r^2 score 0.818 on 107,286 predictions
 
+xgboost with tree_method='hist' (and grow_policy is apparently depthwise by default, not shown)
+In [35] used 34.5156 MiB RAM in 2.12s, peaked 58.59 MiB above current, total RAM usage 962.26 MiB
+r^2 score 0.818 on 107,286 predictions
+
 lgbm
 In [56] used 53.2539 MiB RAM in 1.48s, peaked 107.98 MiB above current, total RAM usage 757.58 MiB
 r^2 score 0.819 on 107,286 predictions
@@ -65,6 +75,20 @@ r^2 score 0.809 on 107,286 predictions # worst score?
 ```
 20210819_light_kaggle
 lightgbm, all features
+```
+
+Having added min/max/nunique for book data using XGBoost I get very little score change, the best features:
+```
+0.4394 	log_return1_linear
+0.2224 	log_return1_uniform
+0.1428 	log_return2_linear
+0.0164 	log_return2_uniform
+0.0060 	log_return2_half0half1
+0.0058 	ask_price2_var
+0.0055 	size
+0.0054 	ask_price2_nunique
+0.0054 	bid_size2_nunique
+0.0052 	stock_id 
 ```
 
 ### diagnostics first crack

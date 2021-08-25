@@ -1,4 +1,5 @@
 import os
+import numpy as np
 import pandas as pd
 from tqdm import tqdm
 
@@ -27,3 +28,5 @@ def make_unique_time_ids(all_time_ids, test_size=0.33):
     )
 
 
+def rmspe_score(y_true, y_pred):
+    return  (np.sqrt(np.mean(np.square((y_true - y_pred) / y_true))))
