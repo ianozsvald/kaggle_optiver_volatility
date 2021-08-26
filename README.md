@@ -7,7 +7,11 @@
 
 Working on `20210825_light` notebook, locally.
 
+* Added bid-ask diff
+  * Note that we're using bid1-ask1 and bid2-ask2 diffs, there
 * Starting to integrate some trade data
+
+Uploaded as v7 to Kaggle `20210802_light` variant - ag, it gets worse! Note that this version had overwritten variables for the new features, my local mistake.
 
 ### 2021-08-19
 
@@ -363,5 +367,5 @@ In `20210715 first eda` if I take `bid_train` for stock id 0 or 1, take the vari
 conda create -n optiver_volatility python=3.8 pandas jupyterlab scikit-learn pandas-profiling matplotlib altair ipython_memory_usage
 conda install pytest numexpr bottleneck
 pip install itables # https://github.com/mwouts/itables
-conda install flake8 pandas-vet shap xgboost lightgbm eli5
+conda install flake8 pandas-vet shap xgboost lightgbm eli5 line_profiler
 ```
