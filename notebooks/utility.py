@@ -30,3 +30,10 @@ def make_unique_time_ids(all_time_ids, test_size=0.33):
 
 def rmspe_score(y_true, y_pred):
     return  (np.sqrt(np.mean(np.square((y_true - y_pred) / y_true))))
+
+
+def load_parquet(ROOT, filename, stock_id):
+    df_book_train_stock_X = pd.read_parquet(os.path.join(ROOT, f"{filename}/stock_id={stock_id}"))
+    df_book_train_stock_X["stock_id"] = stock_id
+    df_book_train_stock_X = df_book_train_stock_X.set_index(['stock_id', 'time_id'])
+    return df_book_train_stock_X

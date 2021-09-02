@@ -13,13 +13,63 @@ Working on `20210825_light` notebook, locally.
 
 Uploaded as v7 to Kaggle `20210802_light` variant - ag, it gets worse! Note that this version had overwritten variables for the new features, my local mistake.
 
+_insight_ I can profile with `%lprun -f load_data_build_features load_data_build_features(31, ROOT, 'book_train.parquet', 'trade_train.parquet', cols, df_train_all)`.
+
+```
+XGBoost defaults tree_method='hist' (fast), 3fold cv r2 0.810, rmspe 0.283
+0.4575 	realized_vol_log_return_wap_linear
+0.2175 	realized_vol_log_return_wap_uniform
+0.1222 	realized_vol_log_return_wap2_linear
+0.0155 	realized_vol_log_return_wap2_uniform
+0.0098 	realized_vol_log_return_wap_uniform_gt400secs * filtering on seconds helped a bit
+0.0052 	realized_vol_log_return_wap2_half0half1
+0.0050 	bid_size1_max
+0.0047 	size
+0.0044 	ask_size2_max
+0.0043 	ask_size1_mean
+0.0042 	ask_size2_var
+0.0042 	ask_price1_var
+0.0041 	ask_price2_mean 
+...
+ realized_vol_log_return_ask1_bid1_diff_linear  19th
+  realized_vol_log_return_ask_price2_uniform 24th
+  
+As above
+n_estimators 50: r2  0.809
+n_estimators 100: r2 0.810
+n_estimators 150: r2 0.810 * I'm not missing out by having too few 
+n_estimators 250: r2 0.809
+
+XGBoost default, 100 trees, r2 0.810 / 0.284
+
+Observation - linear2 is better than linear for wap
+
+Add new features I get 0.811/0.285
+
+XGBR:
+hist, max_depth=3 (nest 100) 0.809
+hist, max_depth=4 0.811
+hist, max_depth=5 0.812
+hist, max_depth=6 0.811
+hist, max_depth=7 0.810
+hist, max_depth=5 eta 0.4 0.810
+hist, max_depth=5 eta 0.3 (def) 0.8121
+hist, max_depth=5 eta 0.25 0.8122
+hist, max_depth=5 eta 0.2 0.8123
+hist, max_depth=5 eta 0.1 0.811
+
+Rerun all 0.8122 r2 3 fold., 0.813 5 fold!
+
+
+```
+
 ### 2021-08-19
 
 Working on `20210819_light` notebook, locally. 
 
 * ~~Generalise wap and make_realized_volatility fns~~
 * ~~Add linear and uniform wap2~~
-* Profile the wap calculations - what's slow?
+* ~~Profile the wap calculations - what's slow?~~
 * Figure out what drives the wap calculation
 * ~~GroupKFold on small groups, check it is reproducible~~
 * Try "from itables import init_notebook_mode" again?
